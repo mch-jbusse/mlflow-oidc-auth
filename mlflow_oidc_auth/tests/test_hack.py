@@ -989,6 +989,18 @@ class TestReauthInjection:
         assert "/login?next=" in content
         assert "window.location.hash" in content
 
+    def test_reauth_login_url_carries_the_base_path(self):
+        """MLflow's page has no <base> element, so behind a path prefix the login target must come
+        from the request's base path, not from the document."""
+        from mlflow_oidc_auth import hack
+
+        with open(os.path.join(hack._HACK_DIR, "reauth.html")) as f:
+            snippet = f.read()
+        result = _run_index("<html><body>Content</body></html>", {"reauth.html": snippet}, reauth=True, menu=False, script_root="/mlstore")
+        assert 'var BASE_PATH = "/mlstore";' in result
+        assert 'BASE_PATH + "/login?next="' in result
+        assert 'querySelector("base")' not in result
+
 
 class TestRedirectInjection:
     """Cover the EXTEND_MLFLOW_REDIRECT_ADMIN flag and its injection ordering."""
